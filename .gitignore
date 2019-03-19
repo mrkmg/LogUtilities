@@ -1,0 +1,3 @@
+*.DotSettings.user
+*/bin/*
+*/obj/*
