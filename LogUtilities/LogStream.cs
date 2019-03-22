@@ -1,22 +1,26 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace LogUtilities
 {
-    public class LogStream : Stream
+    public class LogStream : Stream, ILog
     {
-        private readonly Stream _baseStream;
-        private string _datetimeFormat;
-        private bool _includeDatetime;
-        private bool _includePrefix;
-        private byte[] _prefix;
-        private string _separator;
+        private const int NewLine = 0xA;
 
-        public LogStream(Stream baseStream, string prefix = null, string datetimeFormat = "s", string separator = " | ")
+        private readonly Stream _baseStream;
+        private bool _isNewLine = true;
+        
+        /// <summary>
+        /// Should LogStream dispose the baseStream when it disposes.
+        /// </summary>
+        public bool AutoDisposeInner;
+
+        public LogStream(Stream baseStream)
         {
             _baseStream = baseStream;
-            Initialize(prefix, datetimeFormat, separator);
         }
 
         public override bool CanRead => _baseStream.CanRead;
@@ -28,6 +32,66 @@ namespace LogUtilities
         {
             get => _baseStream.Position;
             set => _baseStream.Position = value;
+        }
+
+        public Encoding Encoding { get; set; } = Encoding.UTF8;
+        public string DateTimeFormat { get; set; } = null;
+        public string Prefix { get; set; } = null;
+        public string Separator { get; set; } = " | ";
+
+        public void Write(string text)
+        {
+            var bytes = Encoding.GetBytes(text);
+            Write(bytes, 0, bytes.Length);
+        }
+
+        public void Write(IEnumerable<string> textBlocks)
+        {
+            Write(textBlocks.Aggregate(((l, r) => l + Separator + r)));
+        }
+
+        public void WriteLine(string line)
+        {
+            Write(line + Environment.NewLine);
+        }
+
+        public void WriteLine(IEnumerable<string> textBlocks)
+        {
+            WriteLine(textBlocks.Aggregate(((l, r) => l + Separator + r)));
+        }
+
+        public void WriteLine()
+        {
+            Write(Environment.NewLine);
+        }
+
+        /// <summary>
+        /// Create an instance of LogStream which writes to a file.
+        /// </summary>
+        /// <param name="path">Path to the log file.</param>
+        /// <returns>Instance of LogStream</returns>
+        public static LogStream ToFile(string path)
+        {
+            return new LogStream(File.Open(path, FileMode.Append)) {AutoDisposeInner = true};
+        }
+
+        public static LogStream ToConsole(LogStreamConsoleType type = LogStreamConsoleType.Stdout)
+        {
+            switch (type)
+            {
+                case LogStreamConsoleType.Stdout:
+                    return new LogStream(Console.OpenStandardOutput());
+                case LogStreamConsoleType.Stderr:
+                    return new LogStream(Console.OpenStandardError());
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
+        }
+
+        public new void Dispose()
+        {
+            if (AutoDisposeInner) _baseStream.Dispose();
+            base.Dispose();
         }
 
         public override void Flush()
@@ -52,64 +116,63 @@ namespace LogUtilities
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            var totalLength = count;
+            var bufferBlocks = SplitByteArrayByNewLine(buffer);
 
-            if (_includePrefix) totalLength += _prefix.Length;
-
-            var dateBytes = new byte[0];
-
-            if (_includeDatetime)
+            foreach (var bufferBlock in bufferBlocks)
             {
-                dateBytes = GetDateStampBytes(_datetimeFormat, _separator);
-                totalLength += dateBytes.Length;
+                if (_isNewLine) WritePrefix();
+                _baseStream.Write(bufferBlock, 0, bufferBlock.Length);
+                _isNewLine = bufferBlock[bufferBlock.Length - 1] == NewLine;
             }
-
-            var bytes = new byte[totalLength];
-            var currentOffset = 0;
-
-            if (_includeDatetime)
-            {
-                Buffer.BlockCopy(dateBytes, 0, bytes, 0, dateBytes.Length);
-                currentOffset += dateBytes.Length;
-            }
-
-            if (_includePrefix)
-            {
-                Buffer.BlockCopy(_prefix, 0, bytes, currentOffset, _prefix.Length);
-                currentOffset += _prefix.Length;
-            }
-
-            Buffer.BlockCopy(buffer, offset, bytes, currentOffset, count);
-
-            _baseStream.Write(bytes, 0, bytes.Length);
         }
 
-        public override void Close()
+        private void WritePrefix()
         {
-            _baseStream.Close();
-            base.Close();
-        }
-
-        private void Initialize(string prefix, string datetimeFormat, string separator)
-        {
-            _separator = separator;
-
-            if (prefix != null)
+            if (DateTimeFormat != null)
             {
-                _includePrefix = true;
-                _prefix = Encoding.UTF8.GetBytes(prefix + separator);
+                var dateBytes = Encoding.GetBytes(DateTime.Now.ToString(DateTimeFormat) + Separator);
+                _baseStream.Write(dateBytes, 0, dateBytes.Length);
             }
 
-            if (datetimeFormat != null)
+            if (Prefix != null)
             {
-                _includeDatetime = true;
-                _datetimeFormat = datetimeFormat;
+                var prefixBytes = Encoding.GetBytes(Prefix + Separator);
+                _baseStream.Write(prefixBytes, 0, prefixBytes.Length);
             }
         }
 
-        private static byte[] GetDateStampBytes(string format, string separator)
+        private static IEnumerable<byte[]> SplitByteArrayByNewLine(byte[] source)
         {
-            return Encoding.UTF8.GetBytes(DateTime.Now.ToString(format) + separator);
+            if (null == source) throw new ArgumentNullException(nameof(source));
+
+            var currentIdx = 0;
+            var lastIdx = 0;
+
+            while (currentIdx < source.Length)
+            {
+                if (source[currentIdx] == NewLine)
+                {
+                    var newArray = new byte[1 + currentIdx - lastIdx];
+                    Array.Copy(source, lastIdx, newArray, 0, 1 + currentIdx - lastIdx);
+                    yield return newArray;
+                    lastIdx = currentIdx + 1;
+                }
+
+                currentIdx++;
+            }
+
+            if (currentIdx != lastIdx)
+            {
+                var newArray = new byte[currentIdx - lastIdx];
+                Array.Copy(source, lastIdx, newArray, 0, currentIdx - lastIdx);
+                yield return newArray;
+            }
         }
+    }
+
+    public enum LogStreamConsoleType
+    {
+        Stdout,
+        Stderr
     }
 }

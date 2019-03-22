@@ -2,6 +2,12 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageVersion>0.1.0</PackageVersion>
+        <Title>LogUtilities</Title>
+        <Authors>Kevin Gravier</Authors>
+        <Description>A collection of log writers to assist in writing logs to either files or streams.</Description>
+        <Copyright>2019 Kevin Gravier</Copyright>
+        <PackageTags>log file rotate</PackageTags>
     </PropertyGroup>
 
 </Project>

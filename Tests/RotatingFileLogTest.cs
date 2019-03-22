@@ -8,26 +8,9 @@ namespace Tests
 {
     public class RotatingFileLogTest
     {
-        [Fact]
-        public void RotateBySize()
+        private static string GetTempFile()
         {
-            var filename = GetTempFile();
-
-            using (var log = new RotatingFileLog(filename, datetimeFormat: null))
-            {
-                log.MaxSize = 2;
-                log.Write("A");
-                log.Write("B");
-                log.Write("C");
-            }
-            
-            Assert.True(File.Exists(filename));
-            Assert.True(File.Exists(filename + ".1"));
-            Assert.Equal("AB", File.ReadAllText(filename + ".1"));
-            Assert.Equal("C", File.ReadAllText(filename));
-            
-            File.Delete(filename);
-            File.Delete(filename + ".1");
+            return Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + new Random().Next() + ".log";
         }
 
         [Fact]
@@ -35,26 +18,58 @@ namespace Tests
         {
             var filename = GetTempFile();
 
-            using (var log = new RotatingFileLog(filename, datetimeFormat: null))
+            using (var log = new RotatingFileLog(filename) {MaxAge = 2})
             {
-                log.MaxAge = 2;
                 log.Write("A");
                 Thread.Sleep(3000);
                 log.Write("B");
             }
-            
+
             Assert.True(File.Exists(filename));
             Assert.True(File.Exists(filename + ".1"));
             Assert.Equal("A", File.ReadAllText(filename + ".1"));
             Assert.Equal("B", File.ReadAllText(filename));
-            
+
             File.Delete(filename);
             File.Delete(filename + ".1");
         }
-        
-        private static string GetTempFile()
+
+        [Fact]
+        public void RotateBySize()
         {
-            return Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + (new Random()).Next() +".log";
+            var filename = GetTempFile();
+
+            using (var log = new RotatingFileLog(filename) {MaxSize = 100})
+            {
+                log.Write(new string('A', 75));
+                log.Write(new string('B', 50));
+            }
+
+            Assert.True(File.Exists(filename));
+            Assert.True(File.Exists(filename + ".1"));
+            Assert.Equal(new string('A', 75) + new string('B', 25), File.ReadAllText(filename + ".1"));
+            Assert.Equal(new string('B', 25), File.ReadAllText(filename));
+
+            File.Delete(filename);
+            File.Delete(filename + ".1");
+        }
+
+        [Fact]
+        public void DoesWorkWithEmbedded()
+        {
+            var filename = GetTempFile();
+
+            using (var rotateLog = new RotatingFileLog(filename) {Prefix = "Rotate"})
+            {
+                using (var innerLog = new LogStream(rotateLog) {Prefix = "Inner"})
+                {
+                    innerLog.Write("test");
+                }
+            }
+            
+            Assert.True(File.Exists(filename));
+            Assert.Equal("Rotate | Inner | test", File.ReadAllText(filename));
+            File.Delete(filename);
         }
     }
 }
