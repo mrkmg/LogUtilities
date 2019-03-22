@@ -127,7 +127,7 @@ namespace Tests
             {
                 using (var logStream = new LogStream(memStream))
                 {
-                    logStream.Write(new[] {"A", "B", "C"});
+                    logStream.Write("A", "B", "C");
                 }
 
                 memStream.Position = 0;

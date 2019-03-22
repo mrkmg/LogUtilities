@@ -5,7 +5,7 @@ using System.Text;
 
 namespace LogUtilities
 {
-    public class RotatingFileLog : Stream, ILog
+    public class RotatingFileLogStream : AbstractLogStream
     {
         private readonly LogStream _logStream;
         private readonly MemoryStream _memoryStream;
@@ -20,23 +20,23 @@ namespace LogUtilities
 
         /// <summary>
         ///     Maximum age of a file in seconds.
-        ///     Set to -1 for infinite.
+        ///     Set to 0 for infinite.
         /// </summary>
-        public double MaxAge = -1;
+        public double MaxAge;
 
         /// <summary>
         ///     Maximum number of files to keep.
-        ///     Set to -1 for infinite.
+        ///     Set to 0 for infinite.
         /// </summary>
-        public int MaxFiles = -1;
+        public int MaxFiles;
 
         /// <summary>
         ///     Maximum size of a file in bytes.
-        ///     Set to -1 for infinite.
+        ///     Set to 0 for infinite.
         /// </summary>
-        public long MaxSize = -1;
+        public long MaxSize;
 
-        public RotatingFileLog(string path)
+        public RotatingFileLogStream(string path)
         {
             _path = path;
             _memoryStream = new MemoryStream();
@@ -58,56 +58,37 @@ namespace LogUtilities
             set => _logStream.Position = value;
         }
 
-        public Encoding Encoding
+        public new Encoding Encoding
         {
             get => _logStream.Encoding;
             set => _logStream.Encoding = value;
         }
 
-        public string DateTimeFormat
+        public new string DateTimeFormat
         {
             get => _logStream.DateTimeFormat;
             set => _logStream.DateTimeFormat = value;
         }
 
-        public string Prefix
+        public new string Prefix
         {
             get => _logStream.Prefix;
             set => _logStream.Prefix = value;
         }
 
-        public string Separator
+        public new string Separator
         {
             get => _logStream.Separator;
             set => _logStream.Separator = value;
         }
 
-        public void WriteLine(string line)
-        {
-            Write(line + Environment.NewLine);
-        }
-
-        public void Write(IEnumerable<string> textBlocks) => _logStream.Write(textBlocks);
-
-        public void WriteLine(IEnumerable<string> textBlocks) => _logStream.WriteLine(textBlocks);
-        public void WriteLine()
-        {
-            _logStream.WriteLine();
-        }
-
-
-        public void Write(string text)
-        {
-            var bytes = Encoding.UTF8.GetBytes(text);
-            Write(bytes, 0, bytes.Length);
-        }
-
-        public void Dispose()
+        public new void Dispose()
         {
             Flush();
             _logStream.Dispose();
             _fileStream.Dispose();
             _memoryStream.Dispose();
+            base.Dispose();
         }
 
         public override void Write(byte[] buffer, int offset, int count)
@@ -185,7 +166,7 @@ namespace LogUtilities
             while (File.Exists(GetPathForIndex(index + 1))) index++;
 
             if (MaxFiles > 0)
-                while (index > MaxFiles)
+                while (index >= MaxFiles)
                 {
                     File.Delete(GetPathForIndex(index));
                     index--;

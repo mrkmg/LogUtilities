@@ -6,7 +6,7 @@ using System.Text;
 
 namespace LogUtilities
 {
-    public class LogStream : Stream, ILog
+    public class LogStream : AbstractLogStream
     {
         private const int NewLine = 0xA;
 
@@ -34,37 +34,6 @@ namespace LogUtilities
             set => _baseStream.Position = value;
         }
 
-        public Encoding Encoding { get; set; } = Encoding.UTF8;
-        public string DateTimeFormat { get; set; } = null;
-        public string Prefix { get; set; } = null;
-        public string Separator { get; set; } = " | ";
-
-        public void Write(string text)
-        {
-            var bytes = Encoding.GetBytes(text);
-            Write(bytes, 0, bytes.Length);
-        }
-
-        public void Write(IEnumerable<string> textBlocks)
-        {
-            Write(textBlocks.Aggregate(((l, r) => l + Separator + r)));
-        }
-
-        public void WriteLine(string line)
-        {
-            Write(line + Environment.NewLine);
-        }
-
-        public void WriteLine(IEnumerable<string> textBlocks)
-        {
-            WriteLine(textBlocks.Aggregate(((l, r) => l + Separator + r)));
-        }
-
-        public void WriteLine()
-        {
-            Write(Environment.NewLine);
-        }
-
         /// <summary>
         /// Create an instance of LogStream which writes to a file.
         /// </summary>
@@ -75,6 +44,12 @@ namespace LogUtilities
             return new LogStream(File.Open(path, FileMode.Append)) {AutoDisposeInner = true};
         }
 
+        /// <summary>
+        /// Create an instance of LogStream which outputs to a console
+        /// </summary>
+        /// <param name="type"><see cref="LogStreamConsoleType"/></param>
+        /// <returns>Instance of LogStream</returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         public static LogStream ToConsole(LogStreamConsoleType type = LogStreamConsoleType.Stdout)
         {
             switch (type)
