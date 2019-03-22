@@ -77,7 +77,7 @@ derived classes will be streams.
 
 *string* **Prefix** - A string prefix each line with. If not set, no prefix will be prepended.
 
-*string* **DateTimeString** A DateTime.ToString format string to prefix each line with. If not set, no prefix will be prepended.
+*string* **DateTimeFormat** A DateTime.ToString format string to prefix each line with. If not set, no prefix will be prepended.
 
 *string* **Separator** - A string to separate the datetime, prefix, and text/text blocks.
 
