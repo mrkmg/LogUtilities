@@ -10,8 +10,10 @@ Writing Logs to a custom stream:
 ```csharp
 using LogUtilities;
 
-using (var stream = new MemoryStream()) { // Getting a custom stream
-	using (var logger = new LogStream(stream)) {
+using (var stream = new MemoryStream()) // Getting a custom stream
+{ 
+	using (var logger = new LogStream(stream))
+	{
 		logger.WriteLine("Some Data");
 	}
 }
