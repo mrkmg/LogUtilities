@@ -59,7 +59,7 @@ namespace Tests
         }
 
         [Fact]
-        public void WriteFromEnumerable()
+        public void WriteTextBlocks()
         {
             using (var memStream = new MemoryStream())
             {
