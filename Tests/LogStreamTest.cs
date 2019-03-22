@@ -50,6 +50,32 @@ namespace Tests
         }
 
         [Fact]
+        public void ShouldDisposeInnerStream()
+        {
+            var memStream = new MemoryStream();
+            var logStream = new LogStream(memStream) {AutoDisposeInner = true};
+            logStream.Dispose();
+            Assert.Throws<ObjectDisposedException>(() => memStream.Write(new[] {(byte) 0}, 0, 1));
+        }
+
+        [Fact]
+        public void WriteFromEnumerable()
+        {
+            using (var memStream = new MemoryStream())
+            {
+                using (var logStream = new LogStream(memStream))
+                {
+                    logStream.Write("A", "B", "C");
+                }
+
+                memStream.Position = 0;
+                var test = new StreamReader(memStream).ReadToEnd();
+
+                Assert.Equal("A | B | C", test);
+            }
+        }
+
+        [Fact]
         public void WriteLineWritesNewLine()
         {
             using (var memStream = new MemoryStream())
@@ -118,32 +144,6 @@ namespace Tests
 
                 Assert.Equal("A | Test", test);
             }
-        }
-
-        [Fact]
-        public void WriteFromEnumerable()
-        {
-            using (var memStream = new MemoryStream())
-            {
-                using (var logStream = new LogStream(memStream))
-                {
-                    logStream.Write("A", "B", "C");
-                }
-
-                memStream.Position = 0;
-                var test = new StreamReader(memStream).ReadToEnd();
-
-                Assert.Equal("A | B | C", test);
-            }
-        }
-
-        [Fact]
-        public void ShouldDisposeInnerStream()
-        {
-            var memStream = new MemoryStream();
-            var logStream = new LogStream(memStream) { AutoDisposeInner = true };
-            logStream.Dispose();
-            Assert.Throws<ObjectDisposedException>((() => memStream.Write(new[] {(byte) 0}, 0, 1)));
         }
     }
 }

@@ -8,24 +8,57 @@ namespace Tests
 {
     public class RotatingFileLogStreamTest : IDisposable
     {
-        private readonly string _testDirectory;
-        
         public RotatingFileLogStreamTest()
         {
             _testDirectory = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + new Random().Next();
             Directory.CreateDirectory(_testDirectory);
         }
 
-        private string GetTempFilePath() => _testDirectory + Path.DirectorySeparatorChar + new Random().Next() + ".log";
-
         public void Dispose()
         {
-            foreach (var file in Directory.GetFiles(_testDirectory))
-            {
-                File.Delete(file);
-            }
-            
+            foreach (var file in Directory.GetFiles(_testDirectory)) File.Delete(file);
+
             Directory.Delete(_testDirectory);
+        }
+
+        private readonly string _testDirectory;
+
+        private string GetTempFilePath()
+        {
+            return _testDirectory + Path.DirectorySeparatorChar + new Random().Next() + ".log";
+        }
+
+        [Fact]
+        public void DoesWorkWithEmbedded()
+        {
+            var filename = GetTempFilePath();
+
+            using (var rotateLog = new RotatingFileLogStream(filename) {Prefix = "Rotate"})
+            {
+                using (var innerLog = new LogStream(rotateLog) {Prefix = "Inner"})
+                {
+                    innerLog.Write("test");
+                }
+            }
+
+            Assert.True(File.Exists(filename));
+            Assert.Equal("Rotate | Inner | test", File.ReadAllText(filename));
+        }
+
+        [Fact]
+        public void RemovesExtraFile()
+        {
+            var filename = GetTempFilePath();
+
+            using (var log = new RotatingFileLogStream(filename) {MaxSize = 1, MaxFiles = 2})
+            {
+                log.Write("ABCD");
+            }
+
+            Assert.True(File.Exists(filename));
+            Assert.True(File.Exists(filename + ".1"));
+            Assert.True(File.Exists(filename + ".2"));
+            Assert.False(File.Exists(filename + ".3"));
         }
 
         [Fact]
@@ -61,39 +94,6 @@ namespace Tests
             Assert.True(File.Exists(filename + ".1"));
             Assert.Equal(new string('A', 75) + new string('B', 25), File.ReadAllText(filename + ".1"));
             Assert.Equal(new string('B', 25), File.ReadAllText(filename));
-        }
-
-        [Fact]
-        public void DoesWorkWithEmbedded()
-        {
-            var filename = GetTempFilePath();
-
-            using (var rotateLog = new RotatingFileLogStream(filename) {Prefix = "Rotate"})
-            {
-                using (var innerLog = new LogStream(rotateLog) {Prefix = "Inner"})
-                {
-                    innerLog.Write("test");
-                }
-            }
-            
-            Assert.True(File.Exists(filename));
-            Assert.Equal("Rotate | Inner | test", File.ReadAllText(filename));
-        }
-
-        [Fact]
-        public void RemovesExtraFile()
-        {
-            var filename = GetTempFilePath();
-
-            using (var log = new RotatingFileLogStream(filename) {MaxSize = 1, MaxFiles = 2})
-            {
-                log.Write("ABCD");
-            }
-            
-            Assert.True(File.Exists(filename));
-            Assert.True(File.Exists(filename + ".1"));
-            Assert.True(File.Exists(filename + ".2"));
-            Assert.False(File.Exists(filename + ".3"));
         }
     }
 }

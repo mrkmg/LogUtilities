@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <PackageVersion>0.1.0</PackageVersion>
+        <PackageVersion>0.1.0-beta1</PackageVersion>
         <Title>LogUtilities</Title>
         <Authors>Kevin Gravier</Authors>
         <Description>A simple library to help with generating logs by using streams.</Description>
@@ -10,7 +10,7 @@
         <PackageTags>log file rotate</PackageTags>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageProjectUrl>https://github.com/mrkmg/LogUtilities</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/mrkmg/LogUtilities/blob/master/LICENSE</PackageLicenseUrl>
+        <PackageLicenseUrl>https://raw.githubusercontent.com/mrkmg/LogUtilities/master/LICENSE</PackageLicenseUrl>
         <RepositoryUrl>https://github.com/mrkmg/LogUtilities.git</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>

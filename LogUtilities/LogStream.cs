@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace LogUtilities
 {
@@ -12,9 +10,9 @@ namespace LogUtilities
 
         private readonly Stream _baseStream;
         private bool _isNewLine = true;
-        
+
         /// <summary>
-        /// Should LogStream dispose the baseStream when it disposes.
+        ///     Should LogStream dispose the baseStream when it disposes.
         /// </summary>
         public bool AutoDisposeInner;
 
@@ -35,7 +33,7 @@ namespace LogUtilities
         }
 
         /// <summary>
-        /// Create an instance of LogStream which writes to a file.
+        ///     Create an instance of LogStream which writes to a file.
         /// </summary>
         /// <param name="path">Path to the log file.</param>
         /// <returns>Instance of LogStream</returns>
@@ -45,9 +43,11 @@ namespace LogUtilities
         }
 
         /// <summary>
-        /// Create an instance of LogStream which outputs to a console
+        ///     Create an instance of LogStream which outputs to a console
         /// </summary>
-        /// <param name="type"><see cref="LogStreamConsoleType"/></param>
+        /// <param name="type">
+        ///     <see cref="LogStreamConsoleType" />
+        /// </param>
         /// <returns>Instance of LogStream</returns>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         public static LogStream ToConsole(LogStreamConsoleType type = LogStreamConsoleType.Stdout)

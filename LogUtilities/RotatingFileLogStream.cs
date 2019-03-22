@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -14,7 +13,7 @@ namespace LogUtilities
         private FileStream _fileStream;
 
         /// <summary>
-        /// AutoFlush the log to disk after every write.
+        ///     AutoFlush the log to disk after every write.
         /// </summary>
         public bool AutoFlush = true;
 
